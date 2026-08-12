@@ -75,10 +75,21 @@ self.addEventListener("fetch", (event) => {
 				!response.headers.get("cache-control")?.includes("no-store")
 			) {
 				cache.put(event.request, response.clone());
+
+				// cache the app shell so navigations keep working offline
+				if (event.request.mode === "navigate") {
+					cache.put("/", response.clone());
+				}
 			}
 
 			return response;
 		} catch (err) {
+			// serve the app shell for navigations when offline
+			if (event.request.mode === "navigate") {
+				const shell = await cache.match("/");
+				if (shell) return shell;
+			}
+
 			const response = await cache.match(event.request);
 
 			if (response) {

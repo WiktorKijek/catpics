@@ -15,7 +15,8 @@
 		"check": "wrangler types src/worker-configuration.d.ts --check && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p src/service-worker/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"gen": "wrangler types src/worker-configuration.d.ts",
-		"fmt": "oxfmt --write ."
+		"fmt": "oxfmt --write .",
+		"db:migrate": "wrangler d1 migrations apply DB"
 	},
 	"devDependencies": {
 		"@catppuccin/palette": "^1.8.0",
@@ -28,6 +29,8 @@
 		"@tanstack/svelte-query": "^6.1.38",
 		"bits-ui": "^2.18.1",
 		"daisyui": "^5.7.16",
+		"kysely": "^0.29.5",
+		"kysely-d1": "^0.4.0",
 		"oxfmt": "^0.62.0",
 		"svelte": "^5.56.1",
 		"svelte-check": "^4.6.0",
