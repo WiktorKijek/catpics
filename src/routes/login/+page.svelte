@@ -7,9 +7,7 @@
 
 	const mutation = useLogin();
 
-	const errorMessage = $derived(
-		mutation.isError ? getErrorMessage(mutation.error) : null,
-	);
+	const errorMessage = $derived(mutation.isError ? getErrorMessage(mutation.error) : null);
 
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
@@ -32,7 +30,6 @@
 					placeholder="Login"
 					class="input w-full"
 					autocomplete="username"
-					maxlength="254"
 					required
 					bind:value={login}
 				/>
@@ -41,7 +38,6 @@
 					placeholder="Password"
 					class="input w-full"
 					autocomplete="current-password"
-					maxlength="128"
 					required
 					bind:value={password}
 				/>

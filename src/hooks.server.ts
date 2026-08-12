@@ -1,4 +1,4 @@
-import type { Handle } from "@sveltejs/kit";
+import type { Handle, HandleValidationError } from "@sveltejs/kit";
 import { createDb } from "#lib/server/db";
 import { SESSION_COOKIE, validateSessionToken } from "#lib/server/session";
 
@@ -11,3 +11,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	return resolve(event);
 };
+
+// Remote functions (e.g. `command`) validate their arguments with a Standard Schema
+// (valibot) on the server. Surface the first issue's message to the client instead of
+// the generic "Bad Request" so users get actionable feedback.
+export const handleValidationError: HandleValidationError = ({ issues }) => ({
+	message: issues[0]?.message ?? "Bad Request",
+});

@@ -21,10 +21,7 @@ export type Database = Kysely<DB>;
  * (`db.transaction()` throws "Transactions are not supported yet."),
  * so batch is the supported way to run multiple statements atomically.
  */
-export async function batch(
-	db: Database,
-	queries: readonly CompiledQuery[],
-): Promise<void> {
+export async function batch(db: Database, queries: readonly CompiledQuery[]): Promise<void> {
 	const database = rawDatabases.get(db);
 	if (!database) {
 		throw new Error("batch: database was not created by createDb");
