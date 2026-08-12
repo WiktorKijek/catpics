@@ -1,0 +1,16 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"rewriteRelativeImportExtensions": true,
+		"sourceMap": true,
+		"strict": true,
+		"types": ["$app/types", "./src/worker-configuration.d.ts"],
+		// `wrangler types` emits `mainModule: typeof import("./.svelte-kit/cloudflare/_worker")`,
+		// which pulls the JS build output into the program after `pnpm build` and drowns
+		// svelte-check in errors about it (cloudflare/workers-sdk#14181). Since all our
+		// source is TypeScript, skip checking .js files instead.
+		"checkJs": false
+	},
+	"include": ["src"],
+	"exclude": ["src/service-worker"]
+}
