@@ -3,7 +3,7 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
 	plugins: [
 		tailwindcss(),
 		sveltekit({
@@ -15,6 +15,7 @@ export default defineConfig({
 			},
 			adapter: adapter(),
 			experimental: { remoteFunctions: true },
+			serviceWorker: { register: command === "build" },
 		}),
 	],
-});
+}));

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
+	import { goto, invalidateAll } from "$app/navigation";
 	import { getErrorMessage, useRegister } from "#lib/queries/account";
 
 	let username = $state("");
@@ -13,15 +13,16 @@
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		try {
-			await mutation.mutateAsync({ username, login, password });
-			goto("/");
+		await mutation.mutateAsync({ username, login, password });
+		await invalidateAll();
+		goto("/");
 		} catch {
 			// error is rendered via mutation.error
 		}
 	}
 </script>
 
-<main class="grid min-h-screen place-items-center">
+<main class="grid min-h-dvh place-items-center px-4 sm:-mt-16">
 	<div class="card bg-base-200 w-full max-w-sm">
 		<div class="card-body gap-4">
 			<h1 class="card-title justify-center">Create an account</h1>
