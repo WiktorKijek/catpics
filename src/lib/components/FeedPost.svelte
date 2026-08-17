@@ -9,6 +9,7 @@
 		Trash2,
 	} from "@lucide/svelte";
 	import { useQueryClient } from "@tanstack/svelte-query";
+	import CommentsDialog from "./CommentsDialog.svelte";
 	import DialogDrawer from "./DialogDrawer.svelte";
 	import DropdownMenu from "./DropdownMenu.svelte";
 	import DropdownMenuItem from "./DropdownMenuItem.svelte";
@@ -90,6 +91,7 @@
 		!!session && (session.userId === post.author.userId || session.isAdmin),
 	);
 	let confirmOpen = $state(false);
+	let commentsOpen = $state(false);
 	let deleteError = $state<string | null>(null);
 
 	async function handleDelete() {
@@ -220,7 +222,11 @@
 		>
 			<Heart size={24} fill={liked ? "currentColor" : "none"} />
 		</button>
-		<button class="btn btn-ghost btn-circle btn-sm" aria-label="Comment">
+		<button
+			class="btn btn-ghost btn-circle btn-sm"
+			aria-label="Comment"
+			onclick={() => (commentsOpen = true)}
+		>
 			<MessageCircle size={24} />
 		</button>
 		<button
@@ -258,7 +264,10 @@
 			</p>
 		{/if}
 		{#if post.commentCount > post.comments.length}
-			<button class="text-base-content/60 w-fit text-start">
+			<button
+				class="text-base-content/60 w-fit text-start"
+				onclick={() => (commentsOpen = true)}
+			>
 				View all {post.commentCount} comments
 			</button>
 		{/if}
@@ -275,6 +284,14 @@
 		</p>
 	</div>
 </article>
+
+<CommentsDialog
+	bind:open={commentsOpen}
+	postId={post.postId}
+	authorUsername={post.author.username}
+	caption={post.caption}
+	{session}
+/>
 
 <DialogDrawer
 	bind:open={confirmOpen}

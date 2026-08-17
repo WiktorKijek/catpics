@@ -15,7 +15,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 // Remote functions (e.g. `command`) validate their arguments with a Standard Schema
 // (valibot) on the server. Surface the first issue's message to the client instead of
 // the generic "Bad Request" so users get actionable feedback.
-export const handleError: HandleServerError = ({ kind, issues }) => {
+export const handleError: HandleServerError = ({ kind, error, issues }) => {
+	console.error("[handleError]", kind, error);
 	if (kind === "validation") {
 		return { message: issues[0]?.message ?? "Bad Request" };
 	}

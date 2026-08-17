@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Bookmark, Cat, Home, LogIn, LogOut, Plus, Users } from "@lucide/svelte";
+	import { Bookmark, Cat, Home, LogIn, Plus, Users } from "@lucide/svelte";
 	import PostComposer from "./PostComposer.svelte";
 	import { imageUrl } from "#lib/images";
 

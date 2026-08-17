@@ -16,7 +16,10 @@
 	let { session }: { session: Session | null } = $props();
 
 	const queryClient = useQueryClient();
-	const bookmarks = useBookmarkedPosts({ enabled: !!session });
+	const bookmarks = useBookmarkedPosts(
+		() => session?.username ?? "",
+		() => ({ enabled: !!session }),
+	);
 
 	const posts = $derived(bookmarks.data?.pages.flatMap((page) => page.posts) ?? []);
 
@@ -113,8 +116,8 @@
 			<div
 				data-index={item.index}
 				use:measureElement
-				class="absolute inset-x-0 top-0"
-				style="transform: translateY({item.start}px)"
+				class="absolute inset-x-0"
+				style="top: {item.start}px"
 			>
 				<FeedPost
 					post={posts[item.index]}

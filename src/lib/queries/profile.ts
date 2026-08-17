@@ -29,9 +29,13 @@ export function useUploadAvatar() {
 	}));
 }
 
-export function useMyProfile() {
+/**
+ * The viewer's own profile. Keyed by the viewer's username so the cache isn't
+ * shared between accounts after a logout/login.
+ */
+export function useMyProfile(username: () => string = () => "") {
 	return createQuery(() => ({
-		queryKey: ["profile", "me"],
+		queryKey: ["profile", "me", username()],
 		queryFn: () => getMyProfile(),
 	}));
 }

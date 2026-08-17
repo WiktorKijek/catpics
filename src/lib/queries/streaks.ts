@@ -2,9 +2,13 @@ import { createQuery } from "@tanstack/svelte-query";
 import { getStreak, type PublicStreak, type StreakLookup } from "#routes/api/v1/streaks/get.remote";
 import { getMyStreak, type MyStreak } from "#routes/api/v1/streaks/me.remote";
 
-export function useMyStreak() {
+/**
+ * The viewer's own streak. Keyed by the viewer's username so the cache isn't
+ * shared between accounts after a logout/login.
+ */
+export function useMyStreak(username: () => string = () => "") {
 	return createQuery(() => ({
-		queryKey: ["streaks", "me"],
+		queryKey: ["streaks", "me", username()],
 		queryFn: () => getMyStreak(),
 	}));
 }

@@ -25,15 +25,23 @@ export function useUnbookmark() {
 
 /**
  * The viewer's saved posts, most recently bookmarked first.
- * Pass `enabled: false` to skip fetching (e.g. when signed out).
+ *
+ * The cache key carries the viewer's username so switching accounts (logout
+ * -> login as someone else) can't serve one user's private bookmarks to
+ * another. Pass a getter, e.g. `useBookmarkedPosts(() => session?.username ?? "")`.
+ * The opts accessor, e.g. `() => ({ enabled: !!session })`, skips fetching
+ * while signed out.
  */
-export function useBookmarkedPosts(opts: { enabled?: boolean } = {}) {
+export function useBookmarkedPosts(
+	username: () => string = () => "",
+	opts: () => { enabled?: boolean } = () => ({}),
+) {
 	return createInfiniteQuery(() => ({
-		queryKey: ["bookmarks", "list"],
+		queryKey: ["bookmarks", "list", username()],
 		queryFn: ({ pageParam }) => listBookmarks({ cursor: pageParam }),
 		initialPageParam: null,
 		getNextPageParam: (lastPage: FeedPage) => lastPage.nextCursor,
-		...opts,
+		...opts(),
 	}));
 }
 
