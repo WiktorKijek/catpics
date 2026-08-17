@@ -2,6 +2,7 @@ import { command, getRequestEvent } from "$app/server";
 import { error } from "@sveltejs/kit";
 import * as v from "valibot";
 import type { AccountInfo } from "./login.remote";
+import { batch } from "#lib/server/db";
 import { hashPassword } from "#lib/server/password";
 import { createSession, SESSION_COOKIE, SESSION_EXPIRY_SECONDS } from "#lib/server/session";
 
@@ -41,13 +42,15 @@ export const register = command(RegisterInputSchema, async (input): Promise<Acco
 	const passwordHash = await hashPassword(password);
 
 	try {
-		// d1 doesn't support transactions (kysely-d1 throws "Transactions are not
-		// supported yet"), so run the two inserts sequentially.
-		await db.insertInto("users").values({ userId, userUsername: username }).execute();
-		await db
-			.insertInto("logins")
-			.values({ loginUserId: userId, loginPasswordHash: passwordHash })
-			.execute();
+		// `batch` runs the two inserts in a single D1 batch so they land
+		// atomically — if either fails, neither takes effect (no orphaned user).
+		await batch(db, [
+			db.insertInto("users").values({ userId, userUsername: username }).compile(),
+			db
+				.insertInto("logins")
+				.values({ loginUserId: userId, loginPasswordHash: passwordHash })
+				.compile(),
+		]);
 	} catch (e) {
 		// Another request created this username between the check above and the
 		// insert. `users.user_username` is unique, so disambiguate by the column

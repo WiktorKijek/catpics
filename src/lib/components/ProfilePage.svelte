@@ -1,11 +1,15 @@
 <script lang="ts">
-	import { ArrowLeft, Check, Grid3X3, Pencil } from "@lucide/svelte";
+	import { invalidateAll } from "$app/navigation";
+	import { ArrowLeft, Check, Ellipsis, Grid3X3, LogOut, Pencil } from "@lucide/svelte";
 	import { createQuery } from "@tanstack/svelte-query";
+	import DropdownMenu from "./DropdownMenu.svelte";
+	import DropdownMenuItem from "./DropdownMenuItem.svelte";
 	import ErrorBoundary from "./ErrorBoundary.svelte";
 	import ProfileEditDialog from "./ProfileEditDialog.svelte";
 	import UserPostGrid from "./UserPostGrid.svelte";
 	import { formatLikes } from "#lib/format";
 	import { imageUrl } from "#lib/images";
+	import { useLogout } from "#lib/queries/account";
 	import { useFollow, useUnfollow } from "#lib/queries/follows";
 	import { getProfile, type PublicProfile } from "#routes/api/v1/profile/get.remote";
 	import { getStreak } from "#routes/api/v1/streaks/get.remote";
@@ -19,7 +23,8 @@
 	let { username, session }: { username: string; session: Session | null } = $props();
 
 	const profileQuery = createQuery(() => ({
-		queryKey: ["profile", username],
+		// `followedByMe` makes this viewer-dependent, so key by viewer + username.
+		queryKey: ["profile", session?.username ?? "", username],
 		queryFn: () => getProfile({ username }),
 		enabled: username.trim().length > 0,
 	}));
@@ -71,6 +76,12 @@
 
 	const follow = useFollow();
 	const unfollow = useUnfollow();
+	const logout = useLogout();
+
+	async function handleLogout() {
+		await logout.mutateAsync();
+		await invalidateAll();
+	}
 
 	async function toggleFollowing() {
 		if (!profile || follow.isPending || unfollow.isPending) return;
@@ -141,15 +152,34 @@
 					<h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">
 						{profile.username}
 					</h1>
-					{#if isOwnProfile}
-						<button
-							type="button"
-							class="btn btn-ghost btn-circle btn-sm"
-							aria-label="Edit profile"
-							onclick={() => (editOpen = true)}
+					{#if session}
+						<DropdownMenu
+							side="bottom"
+							align="end"
+							sideOffset={6}
+							triggerClass="btn btn-ghost btn-circle btn-sm"
+							contentClass="w-44"
+							title="More actions"
+							label="More actions"
 						>
-							<Pencil size={14} />
-						</button>
+							{#snippet trigger()}
+								<Ellipsis size={16} />
+							{/snippet}
+							{#if isOwnProfile}
+								<DropdownMenuItem onSelect={() => (editOpen = true)}>
+									<Pencil size={15} />
+									Edit profile
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={handleLogout}
+									disabled={logout.isPending}
+									class="text-error"
+								>
+									<LogOut size={16} />
+									Log out
+								</DropdownMenuItem>
+							{/if}
+						</DropdownMenu>
 					{/if}
 					{#if profile.isAdmin}
 						<span class="badge badge-soft badge-info badge-sm gap-1">
@@ -187,7 +217,7 @@
 				</div>
 
 				<p class="mt-3 max-w-xl text-sm leading-6">
-					{profile.bio ?? "No bio yet — just here for the good cat content."}
+					{profile.bio ?? "No bio here yet."}
 				</p>
 			</div>
 		</div>

@@ -3,7 +3,7 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ mode }) => ({
 	plugins: [
 		tailwindcss(),
 		sveltekit({
@@ -16,7 +16,9 @@ export default defineConfig(({ command }) => ({
 			},
 			adapter: adapter(),
 			experimental: { remoteFunctions: true },
-			serviceWorker: { register: command === "build" },
+			// Only register the service worker when running in production mode
+			// (vite build / vite preview). Never in development.
+			serviceWorker: { register: mode === "production" },
 		}),
 	],
 }));

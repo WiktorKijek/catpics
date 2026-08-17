@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Loader2 } from "@lucide/svelte";
-	import { createWindowVirtualizer } from "@tanstack/svelte-virtual";
 	import { useQueryClient, type InfiniteData } from "@tanstack/svelte-query";
+	import { createWindowVirtualizer } from "@tanstack/svelte-virtual";
 	import ErrorBoundary from "./ErrorBoundary.svelte";
 	import FeedPost from "./FeedPost.svelte";
 	import FeedSkeleton from "./FeedSkeleton.svelte";
@@ -16,7 +16,10 @@
 	let { session }: { session: Session | null } = $props();
 
 	const queryClient = useQueryClient();
-	const bookmarks = useBookmarkedPosts({ enabled: !!session });
+	const bookmarks = useBookmarkedPosts(
+		() => session?.username ?? "",
+		() => ({ enabled: !!session }),
+	);
 
 	const posts = $derived(bookmarks.data?.pages.flatMap((page) => page.posts) ?? []);
 
@@ -84,8 +87,10 @@
 	>
 		<span class="text-4xl font-bold" aria-hidden="true">:(</span>
 		<p class="text-base-content/70 text-lg font-semibold">Log in to see your saved posts</p>
-		<p class="text-base-content/50 text-sm">Bookmarks are personal — sign in to view them here.</p>
-		<a href="/login" class="btn rounded-full! mt-2">Log in</a>
+		<p class="text-base-content/50 text-sm">
+			Bookmarks are personal — sign in to view them here.
+		</p>
+		<a href="/login" class="btn mt-2 rounded-full!">Log in</a>
 	</div>
 {:else if bookmarks.isPending}
 	<FeedSkeleton count={3} />
@@ -100,9 +105,7 @@
 	>
 		<span class="text-4xl font-bold" aria-hidden="true">:(</span>
 		<p class="text-base-content/70 text-lg font-semibold">No saved posts yet</p>
-		<p class="text-base-content/50 text-sm">
-			Tap the bookmark icon on a post to save it here.
-		</p>
+		<p class="text-base-content/50 text-sm">Tap the bookmark icon on a post to save it here.</p>
 	</div>
 {:else}
 	<div
@@ -113,14 +116,10 @@
 			<div
 				data-index={item.index}
 				use:measureElement
-				class="absolute inset-x-0 top-0"
-				style="transform: translateY({item.start}px)"
+				class="absolute inset-x-0"
+				style="top: {item.start}px"
 			>
-				<FeedPost
-					post={posts[item.index]}
-					{session}
-					onUnbookmarked={onUnbookmarked}
-				/>
+				<FeedPost post={posts[item.index]} {session} {onUnbookmarked} />
 			</div>
 		{/each}
 	</div>

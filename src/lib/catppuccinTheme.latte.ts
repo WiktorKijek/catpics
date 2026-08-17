@@ -5,9 +5,9 @@ export default createCatppuccinPlugin(
 	{
 		primary: "blue",
 		accent: "blue",
-		"--radius-selector": "2rem",
-		"--radius-field": "2rem",
-		"--radius-box": "2rem",
+		"--radius-selector": "1rem",
+		"--radius-field": "1rem",
+		"--radius-box": "1rem",
 		"--border": "2px",
 	},
 	{ default: true, prefersdark: false },

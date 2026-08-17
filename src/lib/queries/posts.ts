@@ -14,12 +14,12 @@ import {
 	type CreatePostInput,
 	type CreatedPost,
 } from "#routes/api/v1/posts/create.remote";
-import { getPost, type GetPostInput, type PostDetail } from "#routes/api/v1/posts/get.remote";
 import {
 	deletePost,
 	type DeletePostInput,
 	type DeletedPost,
 } from "#routes/api/v1/posts/delete.remote";
+import { getPost, type GetPostInput, type PostDetail } from "#routes/api/v1/posts/get.remote";
 
 export function useCreatePost() {
 	return createMutation(() => ({

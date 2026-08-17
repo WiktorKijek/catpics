@@ -14,7 +14,7 @@
 
 	let { session }: { session: Session | null } = $props();
 
-	const feed = useFeed();
+	const feed = useFeed(() => session?.username ?? "");
 
 	const posts = $derived(feed.data?.pages.flatMap((page) => page.posts) ?? []);
 
@@ -62,7 +62,9 @@
 		onRetry={() => feed.refetch()}
 	/>
 {:else if posts.length === 0}
-	<div class="-mx-4 flex w-[calc(100%+2rem)] flex-col items-center gap-2 py-24 text-center sm:mx-auto sm:w-full sm:max-w-lg">
+	<div
+		class="-mx-4 flex w-[calc(100%+2rem)] flex-col items-center gap-2 py-24 text-center sm:mx-auto sm:w-full sm:max-w-lg"
+	>
 		<span class="text-4xl font-bold" aria-hidden="true">:(</span>
 		<p class="text-base-content/70 text-lg font-semibold">Nothing here yet</p>
 		<p class="text-base-content/50 text-sm">
@@ -78,8 +80,8 @@
 			<div
 				data-index={item.index}
 				use:measureElement
-				class="absolute inset-x-0 top-0"
-				style="transform: translateY({item.start}px)"
+				class="absolute inset-x-0"
+				style="top: {item.start}px"
 			>
 				<FeedPost post={posts[item.index]} {session} />
 			</div>

@@ -16,14 +16,20 @@ export function useCreateComment() {
 	}));
 }
 
-/** A post's comments, newest first, paginated via keyset cursor. */
-export function usePostComments(postId: string) {
+/**
+ * A post's comments, newest first, paginated via keyset cursor.
+ *
+ * Fetching is gated on `enabled` so a comments dialog only loads its data
+ * while it's open; the result stays cached (and reusable) after closing.
+ * Pass an accessor (`() => open`) so the gate reacts to state changes.
+ */
+export function usePostComments(postId: string, enabled: () => boolean = () => true) {
 	return createInfiniteQuery(() => ({
 		queryKey: ["comments", postId],
 		queryFn: ({ pageParam }) => listComments({ postId, cursor: pageParam }),
 		initialPageParam: null,
 		getNextPageParam: (lastPage: CommentsPage) => lastPage.nextCursor,
-		enabled: postId.length > 0,
+		enabled: enabled() && postId.length > 0,
 	}));
 }
 
