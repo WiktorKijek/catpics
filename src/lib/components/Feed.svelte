@@ -1,9 +1,18 @@
 <script lang="ts">
-	import { get } from "svelte/store";
-	import { createWindowVirtualizer } from "@tanstack/svelte-virtual";
 	import { Loader2 } from "@lucide/svelte";
-	import { useFeed } from "#lib/queries/feed";
+	import { createWindowVirtualizer } from "@tanstack/svelte-virtual";
+	import ErrorBoundary from "./ErrorBoundary.svelte";
 	import FeedPost from "./FeedPost.svelte";
+	import FeedSkeleton from "./FeedSkeleton.svelte";
+	import { useFeed } from "#lib/queries/feed";
+
+	type Session = {
+		userId: string;
+		isAdmin: boolean;
+		username: string | null;
+	};
+
+	let { session }: { session: Session | null } = $props();
 
 	const feed = useFeed();
 
@@ -13,7 +22,7 @@
 		count: 0,
 		estimateSize: () => 640,
 		overscan: 4,
-		getItemKey: (index) => posts[index]?.id ?? index,
+		getItemKey: (index) => posts[index]?.postId ?? index,
 	});
 
 	$effect(() => {
@@ -46,33 +55,23 @@
 </script>
 
 {#if feed.isPending}
-	<div class="mx-auto flex w-full max-w-lg flex-col gap-4">
-		{#each [0, 1, 2] as i (i)}
-			<div class="border-base-300 bg-base-100 overflow-hidden rounded-2xl border">
-				<div class="flex items-center gap-3 px-4 py-3">
-					<div class="skeleton size-9 rounded-full"></div>
-					<div class="flex flex-col gap-1">
-						<div class="skeleton h-3 w-28"></div>
-						<div class="skeleton h-2.5 w-20"></div>
-					</div>
-				</div>
-				<div class="skeleton aspect-[4/5] w-full rounded-none"></div>
-				<div class="flex flex-col gap-2 px-4 py-3">
-					<div class="skeleton h-6 w-24"></div>
-					<div class="skeleton h-3 w-full"></div>
-					<div class="skeleton h-3 w-3/4"></div>
-				</div>
-			</div>
-		{/each}
-	</div>
+	<FeedSkeleton count={3} />
 {:else if feed.isError}
-	<div class="mx-auto flex w-full max-w-lg flex-col items-center gap-4 py-16">
-		<p class="text-base-content/60">Something went wrong loading the feed.</p>
-		<button class="btn btn-soft" onclick={() => feed.refetch()}>Try again</button>
+	<ErrorBoundary
+		message="Something went wrong loading the feed."
+		onRetry={() => feed.refetch()}
+	/>
+{:else if posts.length === 0}
+	<div class="-mx-4 flex w-[calc(100%+2rem)] flex-col items-center gap-2 py-24 text-center sm:mx-auto sm:w-full sm:max-w-lg">
+		<span class="text-4xl font-bold" aria-hidden="true">:(</span>
+		<p class="text-base-content/70 text-lg font-semibold">Nothing here yet</p>
+		<p class="text-base-content/50 text-sm">
+			Posts will show up here once someone shares the first cat pic.
+		</p>
 	</div>
 {:else}
 	<div
-		class="relative mx-auto w-full max-w-lg"
+		class="relative -mx-4 w-[calc(100%+2rem)] sm:mx-auto sm:w-full sm:max-w-lg"
 		style="height: {$virtualizer.getTotalSize()}px"
 	>
 		{#each $virtualizer.getVirtualItems() as item (item.key)}
@@ -82,7 +81,7 @@
 				class="absolute inset-x-0 top-0"
 				style="transform: translateY({item.start}px)"
 			>
-				<FeedPost post={posts[item.index]} />
+				<FeedPost post={posts[item.index]} {session} />
 			</div>
 		{/each}
 	</div>

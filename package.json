@@ -5,7 +5,8 @@
 	"type": "module",
 	"imports": {
 		"#lib": "./src/lib/index.js",
-		"#lib/*": "./src/lib/*"
+		"#lib/*": "./src/lib/*",
+		"#routes/*": "./src/routes/*"
 	},
 	"scripts": {
 		"dev": "vite dev",
@@ -14,9 +15,14 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "wrangler types src/worker-configuration.d.ts --check && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p src/service-worker/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"gen": "wrangler types src/worker-configuration.d.ts",
+		"gen": "wrangler types src/worker-configuration.d.ts && oxfmt --write src/worker-configuration.d.ts",
 		"fmt": "oxfmt --write .",
 		"db:migrate": "wrangler d1 migrations apply DB"
+	},
+	"dependencies": {
+		"@hiseb/confetti": "^2.2.0",
+		"@tanstack/svelte-virtual": "^3.13.35",
+		"svelte-easy-crop": "^5.0.1"
 	},
 	"devDependencies": {
 		"@catppuccin/daisyui": "^2.1.1",
@@ -40,8 +46,5 @@
 		"vaul-svelte": "^0.3.2",
 		"vite": "^8.0.16",
 		"wrangler": "^4.97.0"
-	},
-	"dependencies": {
-		"@tanstack/svelte-virtual": "^3.13.35"
 	}
 }

@@ -7,9 +7,15 @@
 		title: string;
 		description?: string;
 		children: Snippet;
+		/**
+		 * Optional snippet layered above everything while the dialog is open,
+		 * e.g. a loading overlay. Rendered inside the <dialog> on desktop and
+		 * outside the drawer portal on mobile so it can cover the viewport.
+		 */
+		overlay?: Snippet;
 	};
 
-	let { open = $bindable(false), title, description, children }: Props = $props();
+	let { open = $bindable(false), title, description, children, overlay }: Props = $props();
 
 	let isDesktop = $state(false);
 	let dialog = $state<HTMLDialogElement | null>(null);
@@ -34,6 +40,11 @@
 
 {#if isDesktop}
 	<dialog bind:this={dialog} class="modal" onclose={() => (open = false)}>
+		{#if overlay}
+			<!-- pointer-events-none: the overlay is decorative (e.g. a loading bar);
+			it must never swallow clicks aimed at the modal content. -->
+			<div class="pointer-events-none absolute inset-0 z-[9999]">{@render overlay()}</div>
+		{/if}
 		<div class="modal-box">
 			<h3 class="text-lg font-bold">{title}</h3>
 			{#if description}
@@ -46,6 +57,11 @@
 		</form>
 	</dialog>
 {:else}
+	{#if overlay}
+		<!-- pointer-events-none: the overlay is decorative (e.g. a loading bar);
+		it must never swallow clicks aimed at the drawer. -->
+		<div class="pointer-events-none fixed inset-0 z-[100]">{@render overlay()}</div>
+	{/if}
 	<Drawer.Root bind:open>
 		<Drawer.Portal>
 			<Drawer.Overlay class="bg-neutral/50 fixed inset-0" />

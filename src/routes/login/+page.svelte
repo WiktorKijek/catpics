@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, refreshAll } from "$app/navigation";
 	import { getErrorMessage, useLogin } from "#lib/queries/account";
 
-	let login = $state("");
+	let username = $state("");
 	let password = $state("");
 
 	const mutation = useLogin();
@@ -12,9 +12,9 @@
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		try {
-		await mutation.mutateAsync({ login, password });
-		await invalidateAll();
-		goto("/");
+			await mutation.mutateAsync({ username, password });
+			await refreshAll();
+			goto("/");
 		} catch {
 			// error is rendered via mutation.error
 		}
@@ -28,11 +28,11 @@
 			<form onsubmit={handleSubmit} class="flex flex-col gap-3">
 				<input
 					type="text"
-					placeholder="Login"
+					placeholder="Username"
 					class="input w-full"
 					autocomplete="username"
 					required
-					bind:value={login}
+					bind:value={username}
 				/>
 				<input
 					type="password"

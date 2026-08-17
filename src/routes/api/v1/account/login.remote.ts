@@ -5,11 +5,11 @@ import { verifyPassword } from "#lib/server/password";
 import { createSession, SESSION_COOKIE, SESSION_EXPIRY_SECONDS } from "#lib/server/session";
 
 const LoginInputSchema = v.object({
-	login: v.pipe(
+	username: v.pipe(
 		v.string(),
 		v.trim(),
-		v.minLength(1, "Login must be between 1 and 254 characters"),
-		v.maxLength(254, "Login must be between 1 and 254 characters"),
+		v.minLength(1, "Username must be between 1 and 254 characters"),
+		v.maxLength(254, "Username must be between 1 and 254 characters"),
 	),
 	password: v.pipe(
 		v.string(),
@@ -35,19 +35,21 @@ export const login = command(LoginInputSchema, async (input): Promise<AccountInf
 
 	const account = await event.locals.database
 		.selectFrom("logins")
-		.select(["user_id", "password_hash"])
-		.where("login", "=", input.login)
+		.innerJoin("users", "users.userId", "logins.loginUserId")
+		.select(["logins.loginUserId", "logins.loginPasswordHash"])
+		.where("users.userUsername", "=", input.username)
 		.executeTakeFirst();
 
 	const valid = await verifyPassword(
-		account?.password_hash ?? DUMMY_PASSWORD_HASH,
+		account?.loginPasswordHash ?? DUMMY_PASSWORD_HASH,
 		input.password,
 	);
+
 	if (!account || !valid) {
-		error(401, "Invalid login or password");
+		error(401, "Invalid username or password");
 	}
 
-	const session = await createSession(event.locals.database, account.user_id);
+	const session = await createSession(event.locals.database, account.loginUserId);
 	event.cookies.set(SESSION_COOKIE, session.token, {
 		httpOnly: true,
 		sameSite: "lax",

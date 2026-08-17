@@ -10,7 +10,7 @@
 	themes: false;
 }
 
-@plugin "./catppuccinTheme.latte.ts";
+@plugin "./lib/catppuccinTheme.latte.ts";
 
 .modal-box {
 	transition:
@@ -27,5 +27,22 @@
 			scale 0s,
 			opacity 200ms var(--ease-out),
 			box-shadow 0s;
+	}
+}
+
+.profile-grid-image {
+	transition: transform 200ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.profile-grid-tile:hover .profile-grid-image {
+		transform: scale(1.04);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.profile-grid-image,
+	.profile-grid-overlay {
+		transition: none;
 	}
 }

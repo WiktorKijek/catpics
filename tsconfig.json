@@ -7,7 +7,8 @@
 		"types": ["$app/types", "./src/worker-configuration.d.ts"],
 		"paths": {
 			"#lib": ["./src/lib/index.ts"],
-			"#lib/*": ["./src/lib/*"]
+			"#lib/*": ["./src/lib/*"],
+			"#routes/*": ["./src/routes/*"]
 		},
 		// `wrangler types` emits `mainModule: typeof import("./.svelte-kit/cloudflare/_worker")`,
 		// which pulls the JS build output into the program after `pnpm build` and drowns

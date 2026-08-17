@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { invalidateAll } from "$app/navigation";
-	import { Cat, Home, LogIn, LogOut, Plus } from "@lucide/svelte";
-	import { useLogout } from "#lib/queries/account";
+	import { Bookmark, Cat, Home, LogIn, LogOut, Plus, Users } from "@lucide/svelte";
+	import PostComposer from "./PostComposer.svelte";
+	import { imageUrl } from "#lib/images";
 
 	type Session = {
 		userId: string;
 		isAdmin: boolean;
 		username: string | null;
+		avatarKey: string | null;
 	};
 
 	let { session }: { session: Session | null } = $props();
 
-	const logout = useLogout();
+	let postOpen = $state(false);
 
 	const username = $derived(session?.username?.trim() ? session.username : "Account");
 	const initial = $derived(username.charAt(0).toUpperCase());
-
-	async function handleLogout() {
-		await logout.mutateAsync();
-		await invalidateAll();
-	}
+	const avatarUrl = $derived(imageUrl(session?.avatarKey ?? null, "64"));
+	const profileHref = $derived(
+		session?.username ? `/@${encodeURIComponent(session.username)}` : "/login",
+	);
 </script>
 
 <header class="sticky top-4 z-50 hidden px-4 sm:block">
@@ -40,49 +40,37 @@
 			</a>
 		</div>
 		<div class="navbar-end gap-2">
+			<a href="/users" class="btn btn-ghost btn-circle" title="Users">
+				<Users size={20} />
+			</a>
 			{#if session}
-				<button type="button" class="btn btn-ghost btn-circle" title="New post">
+				<a href="/bookmarks" class="btn btn-ghost btn-circle" title="Bookmarks">
+					<Bookmark size={20} />
+				</a>
+				<button
+					type="button"
+					class="btn btn-ghost btn-circle"
+					title="New post"
+					onclick={() => (postOpen = true)}
+				>
 					<Plus size={20} />
 				</button>
-				<details class="dropdown dropdown-end">
-					<summary class="btn btn-ghost gap-2 rounded-full! pr-3 pl-2" title={username}>
-						<div class="avatar avatar-online avatar-placeholder">
-							<div class="bg-neutral text-neutral-content size-7 rounded-full">
+				<a
+					href={profileHref}
+					class="btn btn-ghost gap-2 rounded-full! pr-3 pl-2"
+					title={username}
+				>
+					<div class="avatar avatar-online" class:avatar-placeholder={!avatarUrl}>
+						<div class="bg-neutral text-neutral-content size-7 rounded-full">
+							{#if avatarUrl}
+								<img src={avatarUrl} alt={`${username}'s avatar`} />
+							{:else}
 								<span class="text-xs">{initial}</span>
-							</div>
+							{/if}
 						</div>
-						<span class="max-w-28 truncate text-sm font-semibold">{username}</span>
-					</summary>
-					<div
-						class="dropdown-content rounded-box border-base-300 bg-base-100 mt-3 w-60 border p-2 shadow-xl"
-					>
-						<div class="flex items-center gap-3 px-2 py-2">
-							<div class="avatar avatar-online avatar-placeholder">
-								<div class="bg-neutral text-neutral-content size-11 rounded-full">
-									<span class="text-lg font-bold">{initial}</span>
-								</div>
-							</div>
-							<div class="min-w-0">
-								<p class="truncate font-bold">{username}</p>
-								{#if session.isAdmin}
-									<span class="badge badge-soft badge-info badge-sm mt-1"
-										>Admin</span
-									>
-								{/if}
-							</div>
-						</div>
-						<div class="divider my-1"></div>
-						<button
-							type="button"
-							class="btn btn-ghost btn-sm text-error! w-full justify-start gap-2"
-							onclick={handleLogout}
-							disabled={logout.isPending}
-						>
-							<LogOut size={16} />
-							Log out
-						</button>
 					</div>
-				</details>
+					<span class="max-w-28 truncate text-sm font-semibold">{username}</span>
+				</a>
 			{:else}
 				<a href="/login" class="btn btn-ghost rounded-full!">Log in</a>
 			{/if}
@@ -95,38 +83,33 @@
 		<Home size={20} />
 		<span class="dock-label">Home</span>
 	</a>
+	<a href="/users">
+		<Users size={20} />
+		<span class="dock-label">Users</span>
+	</a>
 	{#if session}
-		<button type="button" title="New post">
+		<a href="/bookmarks">
+			<Bookmark size={20} />
+			<span class="dock-label">Bookmarks</span>
+		</a>
+		<button type="button" title="New post" onclick={() => (postOpen = true)}>
 			<Plus size={20} />
 			<span class="dock-label">Post</span>
 		</button>
 	{/if}
 	{#if session}
-		<details class="dropdown dropdown-top">
-			<summary class="flex cursor-pointer flex-col items-center gap-0.5">
-				<div class="avatar avatar-placeholder">
-					<div class="bg-neutral text-neutral-content size-7 rounded-full">
+		<a href={profileHref} class="flex flex-col items-center gap-0.5">
+			<div class="avatar" class:avatar-placeholder={!avatarUrl}>
+				<div class="bg-neutral text-neutral-content size-7 rounded-full">
+					{#if avatarUrl}
+						<img src={avatarUrl} alt={`${username}'s avatar`} />
+					{:else}
 						<span>{initial}</span>
-					</div>
+					{/if}
 				</div>
-				<span class="dock-label">{username}</span>
-			</summary>
-			<ul
-				class="dropdown-content menu bg-base-100 rounded-box border-base-300 w-44 border shadow-md"
-			>
-				<li>
-					<button
-						type="button"
-						class="text-error"
-						onclick={handleLogout}
-						disabled={logout.isPending}
-					>
-						<LogOut size={16} />
-						Log out
-					</button>
-				</li>
-			</ul>
-		</details>
+			</div>
+			<span class="dock-label">{username}</span>
+		</a>
 	{:else}
 		<a href="/login">
 			<LogIn size={20} />
@@ -134,3 +117,7 @@
 		</a>
 	{/if}
 </nav>
+
+{#if session}
+	<PostComposer bind:open={postOpen} {session} />
+{/if}

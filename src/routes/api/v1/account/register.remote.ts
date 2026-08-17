@@ -12,12 +12,6 @@ const RegisterInputSchema = v.object({
 		v.minLength(2, "Username must be between 2 and 32 characters"),
 		v.maxLength(32, "Username must be between 2 and 32 characters"),
 	),
-	login: v.pipe(
-		v.string(),
-		v.trim(),
-		v.minLength(3, "Login must be between 3 and 254 characters"),
-		v.maxLength(254, "Login must be between 3 and 254 characters"),
-	),
 	password: v.pipe(
 		v.string(),
 		v.minLength(8, "Password must be between 8 and 128 characters"),
@@ -31,34 +25,35 @@ export const register = command(RegisterInputSchema, async (input): Promise<Acco
 	const event = getRequestEvent();
 	const db = event.locals.database;
 
-	const { username, login, password } = input;
+	const { username, password } = input;
 
-	const existing = await db
-		.selectFrom("logins")
-		.select("user_id")
-		.where("login", "=", login)
+	const existingUsername = await db
+		.selectFrom("users")
+		.select("userId")
+		.where("userUsername", "=", username)
 		.executeTakeFirst();
-	if (existing) {
-		error(409, "An account with this login already exists");
+
+	if (existingUsername) {
+		error(409, "This username is already taken");
 	}
 
 	const userId = crypto.randomUUID();
 	const passwordHash = await hashPassword(password);
 
 	try {
-		// kysely-d1 doesn't support `db.transaction()` (it throws "Transactions are not
-		// supported yet"), so run the two inserts sequentially. The UNIQUE constraint on
-		// `logins.login` catches the race where another request creates the same login
-		// between the check above and the insert.
-		await db.insertInto("users").values({ id: userId, username }).execute();
+		// d1 doesn't support transactions (kysely-d1 throws "Transactions are not
+		// supported yet"), so run the two inserts sequentially.
+		await db.insertInto("users").values({ userId, userUsername: username }).execute();
 		await db
 			.insertInto("logins")
-			.values({ user_id: userId, login, password_hash: passwordHash })
+			.values({ loginUserId: userId, loginPasswordHash: passwordHash })
 			.execute();
 	} catch (e) {
-		// Another request created this login between the check above and the insert
+		// Another request created this username between the check above and the
+		// insert. `users.user_username` is unique, so disambiguate by the column
+		// reported by SQLite.
 		if (e instanceof Error && e.message.includes("UNIQUE constraint failed")) {
-			error(409, "An account with this login already exists");
+			error(409, "This username is already taken");
 		}
 		throw e;
 	}
