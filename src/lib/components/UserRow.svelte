@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { Check } from "@lucide/svelte";
+	import type { UserSummary } from "#routes/api/v1/users/list.remote";
 	import { formatLikes } from "#lib/format";
 	import { imageUrl } from "#lib/images";
 	import { useFollow, useUnfollow } from "#lib/queries/follows";
-	import type { UserSummary } from "#routes/api/v1/users/list.remote";
 
 	type Session = {
 		userId: string;

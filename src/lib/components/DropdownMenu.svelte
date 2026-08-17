@@ -2,8 +2,8 @@
 	import { DropdownMenu as BitsDropdownMenu } from "bits-ui";
 	import { setContext } from "svelte";
 	import { Drawer } from "vaul-svelte";
-	import type { Snippet } from "svelte";
 	import { MOBILE_DROPDOWN_MENU_CONTEXT_KEY } from "./dropdownMenuContext.js";
+	import type { Snippet } from "svelte";
 
 	type Props = {
 		/** Markup rendered inside the trigger button (e.g. avatar + username). */

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { DropdownMenu } from "bits-ui";
 	import { getContext } from "svelte";
-	import type { Snippet } from "svelte";
 	import {
 		MOBILE_DROPDOWN_MENU_CONTEXT_KEY,
 		type MobileDropdownMenuContext,
 	} from "./dropdownMenuContext.js";
+	import type { Snippet } from "svelte";
 
 	type RestProps = Omit<DropdownMenu.ItemProps, "child" | "children">;
 	type Props = RestProps & {

@@ -4,7 +4,7 @@
 
 <div class="-mx-4 flex w-[calc(100%+2rem)] flex-col gap-4 sm:mx-auto sm:w-full sm:max-w-lg">
 	{#each Array.from({ length: count }) as _, i (i)}
-		<div class="bg-base-100 overflow-hidden sm:rounded-2xl sm:border sm:border-base-300">
+		<div class="bg-base-100 sm:border-base-300 overflow-hidden sm:rounded-2xl sm:border">
 			<div class="flex items-center gap-3 px-4 py-3">
 				<div class="skeleton size-9 rounded-full"></div>
 				<div class="flex flex-col gap-1">

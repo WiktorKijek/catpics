@@ -62,7 +62,9 @@
 		onRetry={() => feed.refetch()}
 	/>
 {:else if posts.length === 0}
-	<div class="-mx-4 flex w-[calc(100%+2rem)] flex-col items-center gap-2 py-24 text-center sm:mx-auto sm:w-full sm:max-w-lg">
+	<div
+		class="-mx-4 flex w-[calc(100%+2rem)] flex-col items-center gap-2 py-24 text-center sm:mx-auto sm:w-full sm:max-w-lg"
+	>
 		<span class="text-4xl font-bold" aria-hidden="true">:(</span>
 		<p class="text-base-content/70 text-lg font-semibold">Nothing here yet</p>
 		<p class="text-base-content/50 text-sm">

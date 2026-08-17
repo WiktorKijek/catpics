@@ -46,27 +46,24 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
 	return bytes;
 }
 
-export const uploadAvatar = command(
-	UploadAvatarSchema,
-	async (input): Promise<UploadedAvatar> => {
-		const event = getRequestEvent();
-		const session = requireSession(event);
-		const platform = event.platform;
-		if (!platform) {
-			error(500, "Missing platform bindings");
-		}
+export const uploadAvatar = command(UploadAvatarSchema, async (input): Promise<UploadedAvatar> => {
+	const event = getRequestEvent();
+	const session = requireSession(event);
+	const platform = event.platform;
+	if (!platform) {
+		error(500, "Missing platform bindings");
+	}
 
-		const stamp = `${Date.now()}-${crypto.randomUUID()}`;
-		const base = `avatars/${session.userId}/${stamp}`;
-		await Promise.all([
-			platform.env.BUCKET.put(`${base}-512.webp`, dataUrlToBytes(input.dataUrl512), {
-				httpMetadata: { contentType: "image/webp" },
-			}),
-			platform.env.BUCKET.put(`${base}-64.webp`, dataUrlToBytes(input.dataUrl64), {
-				httpMetadata: { contentType: "image/webp" },
-			}),
-		]);
+	const stamp = `${Date.now()}-${crypto.randomUUID()}`;
+	const base = `avatars/${session.userId}/${stamp}`;
+	await Promise.all([
+		platform.env.BUCKET.put(`${base}-512.webp`, dataUrlToBytes(input.dataUrl512), {
+			httpMetadata: { contentType: "image/webp" },
+		}),
+		platform.env.BUCKET.put(`${base}-64.webp`, dataUrlToBytes(input.dataUrl64), {
+			httpMetadata: { contentType: "image/webp" },
+		}),
+	]);
 
-		return { key: `${base}-512.webp` };
-	},
-);
+	return { key: `${base}-512.webp` };
+});

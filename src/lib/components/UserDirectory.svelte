@@ -79,7 +79,9 @@
 	</label>
 
 	{#if users.isPending}
-		<ul class="list border-base-300 bg-base-100 -mx-4 w-[calc(100%+2rem)] rounded-none border-y border-x-0 sm:mx-auto sm:w-full sm:rounded-2xl sm:border-x">
+		<ul
+			class="list border-base-300 bg-base-100 -mx-4 w-[calc(100%+2rem)] rounded-none border-x-0 border-y sm:mx-auto sm:w-full sm:rounded-2xl sm:border-x"
+		>
 			{#each [0, 1, 2, 3, 4] as i (i)}
 				<li class="list-row gap-3 px-3 py-2.5">
 					<div class="skeleton size-12 shrink-0 rounded-full"></div>
@@ -108,7 +110,9 @@
 			</p>
 		</div>
 	{:else}
-		<ul class="list border-base-300 bg-base-100 -mx-4 w-[calc(100%+2rem)] rounded-none border-y border-x-0 sm:mx-auto sm:w-full sm:rounded-2xl sm:border-x">
+		<ul
+			class="list border-base-300 bg-base-100 -mx-4 w-[calc(100%+2rem)] rounded-none border-x-0 border-y sm:mx-auto sm:w-full sm:rounded-2xl sm:border-x"
+		>
 			{#each rows as user (user.userId)}
 				<UserRow {user} {session} />
 			{/each}
