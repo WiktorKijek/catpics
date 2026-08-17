@@ -73,8 +73,8 @@ export async function createSession(db: Kysely<DB>, userId: string): Promise<Ses
 
 	const user = await db
 		.selectFrom("users")
-		.select(["is_admin", "username"])
-		.where("id", "=", userId)
+		.select(["userIsAdmin", "userUsername"])
+		.where("userId", "=", userId)
 		.executeTakeFirst();
 	if (!user) {
 		throw new Error("User not found");
@@ -92,17 +92,17 @@ export async function createSession(db: Kysely<DB>, userId: string): Promise<Ses
 		createdAt: now,
 		token,
 		userId,
-		isAdmin: user.is_admin === 1,
-		username: user.username,
+		isAdmin: user.userIsAdmin === 1,
+		username: user.userUsername,
 	};
 
 	await db
 		.insertInto("sessions")
 		.values({
-			id: session.id,
-			secret_hash: toHex(session.secretHash),
-			created_at: session.createdAt.getTime(),
-			user_id: userId,
+			sessionId: session.id,
+			sessionSecretHash: toHex(session.secretHash),
+			sessionCreatedAt: session.createdAt.getTime(),
+			sessionUserId: userId,
 		})
 		.execute();
 
@@ -136,36 +136,36 @@ export async function getSession(db: Kysely<DB>, sessionId: string): Promise<Ses
 
 	const sessionWithUser = await db
 		.selectFrom("sessions")
-		.innerJoin("users", "users.id", "sessions.user_id")
+		.innerJoin("users", "users.userId", "sessions.sessionUserId")
 		.select([
-			"sessions.id",
-			"sessions.secret_hash",
-			"sessions.created_at",
-			"sessions.user_id",
-			"users.is_admin",
-			"users.username",
+			"sessions.sessionId",
+			"sessions.sessionSecretHash",
+			"sessions.sessionCreatedAt",
+			"sessions.sessionUserId",
+			"users.userIsAdmin",
+			"users.userUsername",
 		])
-		.where("sessions.id", "=", sessionId)
+		.where("sessions.sessionId", "=", sessionId)
 		.executeTakeFirst();
 
 	if (!sessionWithUser) return null;
 
 	// Check expiration
-	if (now.getTime() - sessionWithUser.created_at >= SESSION_EXPIRY_SECONDS * 1000) {
+	if (now.getTime() - sessionWithUser.sessionCreatedAt >= SESSION_EXPIRY_SECONDS * 1000) {
 		await deleteSession(db, sessionId);
 		return null;
 	}
 
 	return {
-		id: sessionWithUser.id,
-		secretHash: fromHex(sessionWithUser.secret_hash),
-		createdAt: new Date(sessionWithUser.created_at),
-		userId: sessionWithUser.user_id,
-		isAdmin: sessionWithUser.is_admin === 1,
-		username: sessionWithUser.username,
+		id: sessionWithUser.sessionId,
+		secretHash: fromHex(sessionWithUser.sessionSecretHash),
+		createdAt: new Date(sessionWithUser.sessionCreatedAt),
+		userId: sessionWithUser.sessionUserId,
+		isAdmin: sessionWithUser.userIsAdmin === 1,
+		username: sessionWithUser.userUsername,
 	};
 }
 
 export async function deleteSession(db: Kysely<DB>, sessionId: string): Promise<void> {
-	await db.deleteFrom("sessions").where("id", "=", sessionId).execute();
+	await db.deleteFrom("sessions").where("sessionId", "=", sessionId).execute();
 }

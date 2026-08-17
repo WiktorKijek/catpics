@@ -17,4 +17,10 @@
 			"database_id": "d4f97732-2f78-45b4-976b-2350e878c785",
 		},
 	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "catpics",
+		},
+	],
 }

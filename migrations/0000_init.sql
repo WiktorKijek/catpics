@@ -1,24 +1,23 @@
 CREATE TABLE `users` (
-    `id` text PRIMARY KEY NOT NULL,
-    `username` text NOT NULL,
-    `is_admin` integer DEFAULT 0 NOT NULL
+    `user_id` text PRIMARY KEY NOT NULL,
+    `user_username` text NOT NULL UNIQUE,
+    `user_is_admin` integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE `logins` (
-    `user_id` text PRIMARY KEY NOT NULL,
-    `login` text NOT NULL UNIQUE,
-    `password_hash` text NOT NULL,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    `login_user_id` text PRIMARY KEY NOT NULL,
+    `login_password_hash` text NOT NULL,
+    FOREIGN KEY (`login_user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE `sessions` (
-    `id` text PRIMARY KEY NOT NULL,
-    `secret_hash` text NOT NULL,
-    `created_at` integer NOT NULL,
-    `user_id` text NOT NULL,
-    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE
+    `session_id` text PRIMARY KEY NOT NULL,
+    `session_secret_hash` text NOT NULL,
+    `session_created_at` integer NOT NULL,
+    `session_user_id` text NOT NULL,
+    FOREIGN KEY (`session_user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX `idx_sessions_user_id` ON `sessions` (`user_id`);
-CREATE INDEX `idx_logins_user_id` ON `logins` (`user_id`);
-CREATE INDEX `idx_users_is_admin` ON `users` (`is_admin`);
+CREATE INDEX `idx_sessions_user_id` ON `sessions` (`session_user_id`);
+CREATE INDEX `idx_logins_user_id` ON `logins` (`login_user_id`);
+CREATE INDEX `idx_users_is_admin` ON `users` (`user_is_admin`);

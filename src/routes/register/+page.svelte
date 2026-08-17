@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { goto, invalidateAll } from "$app/navigation";
+	import { goto, refreshAll } from "$app/navigation";
 	import { getErrorMessage, useRegister } from "#lib/queries/account";
 
 	let username = $state("");
-	let login = $state("");
 	let password = $state("");
 
 	const mutation = useRegister();
@@ -13,9 +12,9 @@
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		try {
-		await mutation.mutateAsync({ username, login, password });
-		await invalidateAll();
-		goto("/");
+			await mutation.mutateAsync({ username, password });
+			await refreshAll();
+			goto("/");
 		} catch {
 			// error is rendered via mutation.error
 		}
@@ -31,17 +30,9 @@
 					type="text"
 					placeholder="Username"
 					class="input w-full"
-					autocomplete="nickname"
-					required
-					bind:value={username}
-				/>
-				<input
-					type="text"
-					placeholder="Login"
-					class="input w-full"
 					autocomplete="username"
 					required
-					bind:value={login}
+					bind:value={username}
 				/>
 				<input
 					type="password"

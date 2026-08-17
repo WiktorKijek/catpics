@@ -1,4 +1,4 @@
-import { Kysely, type CompiledQuery } from "kysely";
+import { CamelCasePlugin, Kysely, type CompiledQuery } from "kysely";
 import { D1Dialect } from "kysely-d1";
 import type { DB } from "./types";
 
@@ -7,6 +7,7 @@ const rawDatabases = new WeakMap<Kysely<DB>, D1Database>();
 export function createDb(database: D1Database): Kysely<DB> {
 	const db = new Kysely<DB>({
 		dialect: new D1Dialect({ database }),
+		plugins: [new CamelCasePlugin()],
 	});
 	rawDatabases.set(db, database);
 	return db;

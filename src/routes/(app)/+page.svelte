@@ -1,5 +1,6 @@
 <script lang="ts">
+	import { page } from "$app/state";
 	import Feed from "#lib/components/Feed.svelte";
 </script>
 
-<Feed />
+<Feed session={page.data.session} />
