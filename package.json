@@ -15,6 +15,7 @@
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "wrangler types src/worker-configuration.d.ts --check && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p src/service-worker/tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"deploy": "pnpm run build && wrangler deploy",
 		"gen": "wrangler types src/worker-configuration.d.ts && oxfmt --write src/worker-configuration.d.ts",
 		"fmt": "oxfmt --write .",
 		"db:migrate": "wrangler d1 migrations apply DB"
