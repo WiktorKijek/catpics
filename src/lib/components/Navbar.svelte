@@ -60,7 +60,7 @@
 					class="btn btn-ghost gap-2 rounded-full! pr-3 pl-2"
 					title={username}
 				>
-					<div class="avatar avatar-online" class:avatar-placeholder={!avatarUrl}>
+					<div class="avatar" class:avatar-placeholder={!avatarUrl}>
 						<div class="bg-neutral text-neutral-content size-7 rounded-full">
 							{#if avatarUrl}
 								<img src={avatarUrl} alt={`${username}'s avatar`} />
