@@ -39,8 +39,12 @@ export const deletePost = command(DeletePostSchema, async (input): Promise<Delet
 	}
 
 	// Remove the stored photos from the bucket so a deleted post doesn't leave
-	// orphaned objects behind. Best-effort only: the DB row is what makes the
-	// post disappear, so an R2 hiccup must not block the deletion.
+	// orphaned objects behind. Only objects the post author actually uploaded
+	// are removed: post rows can only reference keys under `posts/<author>/`
+	// (create validates that), but re-checking here keeps any legacy or future
+	// row from letting a deletion wipe another user's media. Best-effort only:
+	// the DB row is what makes the post disappear, so an R2 hiccup must not
+	// block the deletion.
 	const platform = event.platform;
 	if (platform) {
 		try {
@@ -49,8 +53,11 @@ export const deletePost = command(DeletePostSchema, async (input): Promise<Delet
 				.select("postImageKey")
 				.where("postImagePostId", "=", input.postId)
 				.execute();
-			if (imageRows.length > 0) {
-				await platform.env.BUCKET.delete(imageRows.map((row) => row.postImageKey));
+			const owned = imageRows.filter((row) =>
+				row.postImageKey.startsWith(`posts/${post.postAuthorId}/`),
+			);
+			if (owned.length > 0) {
+				await platform.env.BUCKET.delete(owned.map((row) => row.postImageKey));
 			}
 		} catch {
 			// Ignore R2 failures — the post is being deleted anyway.

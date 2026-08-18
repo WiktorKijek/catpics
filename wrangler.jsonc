@@ -17,6 +17,12 @@
 			"database_id": "62734544-7ec4-420f-a7e3-daa735dda905",
 		},
 	],
+	"kv_namespaces": [
+		{
+			"binding": "AUTH_RATE_LIMIT_KV",
+			"id": "747726ec92f94c4cae340ae15cdcbf47",
+		},
+	],
 	"r2_buckets": [
 		{
 			"binding": "BUCKET",

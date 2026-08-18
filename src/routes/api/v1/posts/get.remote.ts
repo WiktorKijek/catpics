@@ -1,7 +1,12 @@
 import { command, getRequestEvent } from "$app/server";
 import { error } from "@sveltejs/kit";
 import * as v from "valibot";
-import { hydrateFeedPosts, type FeedPost } from "#lib/server/posts";
+import {
+	fetchPostCounts,
+	hydrateFeedPosts,
+	type FeedPost,
+	type FeedPostSeed,
+} from "#lib/server/posts";
 
 const GetPostSchema = v.object({
 	postId: v.pipe(v.string(), v.trim(), v.minLength(1, "Post id is required")),
@@ -26,7 +31,7 @@ export const getPost = command(GetPostSchema, async (input): Promise<FeedPost> =
 		.selectFrom("posts")
 		.innerJoin("users", "users.userId", "posts.postAuthorId")
 		.leftJoin("profiles", "profiles.profileUserId", "posts.postAuthorId")
-		.select((eb) => [
+		.select([
 			"posts.postId",
 			"posts.postCaption",
 			"posts.postLocation",
@@ -34,16 +39,6 @@ export const getPost = command(GetPostSchema, async (input): Promise<FeedPost> =
 			"posts.postAuthorId",
 			"users.userUsername as authorUsername",
 			"profiles.profileAvatarKey as authorAvatarKey",
-			eb
-				.selectFrom("likes")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("likePostId", "=", "posts.postId")
-				.as("likeCount"),
-			eb
-				.selectFrom("comments")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("commentPostId", "=", "posts.postId")
-				.as("commentCount"),
 		])
 		.where("posts.postId", "=", input.postId)
 		.executeTakeFirst();
@@ -52,6 +47,21 @@ export const getPost = command(GetPostSchema, async (input): Promise<FeedPost> =
 		error(404, "Post not found");
 	}
 
-	const [hydrated] = await hydrateFeedPosts(db, [post], viewerId);
+	const { likeCounts, commentCounts } = await fetchPostCounts(db, [post.postId]);
+	const seeds: FeedPostSeed[] = [
+		{
+			postId: post.postId,
+			postCaption: post.postCaption,
+			postLocation: post.postLocation,
+			postCreatedAt: post.postCreatedAt,
+			postAuthorId: post.postAuthorId,
+			authorUsername: post.authorUsername,
+			authorAvatarKey: post.authorAvatarKey,
+			likeCount: likeCounts.get(post.postId) ?? 0,
+			commentCount: commentCounts.get(post.postId) ?? 0,
+		},
+	];
+
+	const [hydrated] = await hydrateFeedPosts(db, seeds, viewerId);
 	return hydrated;
 });

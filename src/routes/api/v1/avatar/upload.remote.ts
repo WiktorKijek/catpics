@@ -49,6 +49,7 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
 export const uploadAvatar = command(UploadAvatarSchema, async (input): Promise<UploadedAvatar> => {
 	const event = getRequestEvent();
 	const session = requireSession(event);
+	const db = event.locals.database;
 	const platform = event.platform;
 	if (!platform) {
 		error(500, "Missing platform bindings");
@@ -64,6 +65,25 @@ export const uploadAvatar = command(UploadAvatarSchema, async (input): Promise<U
 			httpMetadata: { contentType: "image/webp" },
 		}),
 	]);
+
+	// The previous avatar pair would otherwise accumulate forever. Best-effort:
+	// the new pair already landed, so a failed cleanup only leaks one pair.
+	// Only ever touch keys under the session user's own avatar namespace.
+	const previous = await db
+		.selectFrom("profiles")
+		.select("profileAvatarKey")
+		.where("profileUserId", "=", session.userId)
+		.executeTakeFirst();
+	const previousKey = previous?.profileAvatarKey;
+	if (
+		previousKey?.startsWith(`avatars/${session.userId}/`) &&
+		previousKey.endsWith("-512.webp")
+	) {
+		await platform.env.BUCKET.delete([
+			previousKey,
+			previousKey.replace("-512.webp", "-64.webp"),
+		]).catch(() => {});
+	}
 
 	return { key: `${base}-512.webp` };
 });

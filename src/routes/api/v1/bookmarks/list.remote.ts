@@ -2,7 +2,13 @@ import { command, getRequestEvent } from "$app/server";
 import * as v from "valibot";
 import { keysetCursorSchema } from "#lib/cursor";
 import { requireSession } from "#lib/server/auth";
-import { hydrateFeedPosts, type FeedPage, type FeedPost } from "#lib/server/posts";
+import {
+	fetchPostCounts,
+	hydrateFeedPosts,
+	type FeedPage,
+	type FeedPost,
+	type FeedPostSeed,
+} from "#lib/server/posts";
 
 const PAGE_SIZE = 10;
 
@@ -29,7 +35,7 @@ export const listBookmarks = command(ListBookmarksSchema, async (input): Promise
 		.innerJoin("posts", "posts.postId", "bookmarks.bookmarkPostId")
 		.innerJoin("users", "users.userId", "posts.postAuthorId")
 		.leftJoin("profiles", "profiles.profileUserId", "posts.postAuthorId")
-		.select((eb) => [
+		.select([
 			"bookmarks.bookmarkCreatedAt",
 			"posts.postId",
 			"posts.postCaption",
@@ -38,16 +44,6 @@ export const listBookmarks = command(ListBookmarksSchema, async (input): Promise
 			"posts.postAuthorId",
 			"users.userUsername as authorUsername",
 			"profiles.profileAvatarKey as authorAvatarKey",
-			eb
-				.selectFrom("likes")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("likePostId", "=", "posts.postId")
-				.as("likeCount"),
-			eb
-				.selectFrom("comments")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("commentPostId", "=", "posts.postId")
-				.as("commentCount"),
 		]);
 
 	if (cursor) {
@@ -68,7 +64,23 @@ export const listBookmarks = command(ListBookmarksSchema, async (input): Promise
 		.limit(PAGE_SIZE)
 		.execute();
 
-	const posts = await hydrateFeedPosts(db, rows, session.userId);
+	const { likeCounts, commentCounts } = await fetchPostCounts(
+		db,
+		rows.map((row) => row.postId),
+	);
+	const seeds: FeedPostSeed[] = rows.map((row) => ({
+		postId: row.postId,
+		postCaption: row.postCaption,
+		postLocation: row.postLocation,
+		postCreatedAt: row.postCreatedAt,
+		postAuthorId: row.postAuthorId,
+		authorUsername: row.authorUsername,
+		authorAvatarKey: row.authorAvatarKey,
+		likeCount: likeCounts.get(row.postId) ?? 0,
+		commentCount: commentCounts.get(row.postId) ?? 0,
+	}));
+
+	const posts = await hydrateFeedPosts(db, seeds, session.userId);
 
 	// The cursor seeks on bookmark time, not post time, so derive it from the
 	// raw rows rather than the hydrated posts.
