@@ -60,7 +60,7 @@ Copy the generated `database_id` from the command output and update it in [`wran
 
 ```bash
 # Apply database migrations to remote D1
-pnpm db:migrate
+pnpm db:migrate --remote
 
 # Build and deploy worker
 pnpm deploy
