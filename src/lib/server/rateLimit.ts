@@ -109,5 +109,10 @@ export async function recordRateLimitHit(
 	{ windowMs }: RateLimitOptions,
 ): Promise<void> {
 	const counter = (await readCounter(kv, key)) ?? { count: 0, windowStart: Date.now() };
-	await writeCounter(kv, key, { count: counter.count + 1, windowStart: counter.windowStart }, windowMs);
+	await writeCounter(
+		kv,
+		key,
+		{ count: counter.count + 1, windowStart: counter.windowStart },
+		windowMs,
+	);
 }

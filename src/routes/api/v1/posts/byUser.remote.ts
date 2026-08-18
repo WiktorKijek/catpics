@@ -41,7 +41,9 @@ export const getUserPosts = command(GetUserPostsSchema, async (input): Promise<U
 		error(404, "User not found");
 	}
 
-	let query = db.selectFrom("posts").select(["posts.postId", "posts.postCreatedAt"])
+	let query = db
+		.selectFrom("posts")
+		.select(["posts.postId", "posts.postCreatedAt"])
 		.where("posts.postAuthorId", "=", input.userId);
 
 	if (cursor) {

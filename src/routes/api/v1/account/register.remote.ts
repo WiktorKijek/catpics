@@ -4,7 +4,12 @@ import * as v from "valibot";
 import type { AccountInfo } from "./login.remote";
 import { batch } from "#lib/server/db";
 import { hashPassword } from "#lib/server/password";
-import { assertRateLimit, AUTH_RATE_LIMITS, clientIp, recordRateLimitHit } from "#lib/server/rateLimit";
+import {
+	assertRateLimit,
+	AUTH_RATE_LIMITS,
+	clientIp,
+	recordRateLimitHit,
+} from "#lib/server/rateLimit";
 import { createSession, SESSION_COOKIE, SESSION_EXPIRY_SECONDS } from "#lib/server/session";
 
 const RegisterInputSchema = v.object({
@@ -44,8 +49,16 @@ export const register = command(RegisterInputSchema, async (input): Promise<Acco
 
 	// Bound account creation per IP; every attempt (successful or not) counts.
 	const ip = clientIp(event);
-	await assertRateLimit(platform.env.AUTH_RATE_LIMIT_KV, `register:ip:${ip}`, AUTH_RATE_LIMITS.registerPerIp);
-	await recordRateLimitHit(platform.env.AUTH_RATE_LIMIT_KV, `register:ip:${ip}`, AUTH_RATE_LIMITS.registerPerIp);
+	await assertRateLimit(
+		platform.env.AUTH_RATE_LIMIT_KV,
+		`register:ip:${ip}`,
+		AUTH_RATE_LIMITS.registerPerIp,
+	);
+	await recordRateLimitHit(
+		platform.env.AUTH_RATE_LIMIT_KV,
+		`register:ip:${ip}`,
+		AUTH_RATE_LIMITS.registerPerIp,
+	);
 
 	const existingUsername = await db
 		.selectFrom("users")

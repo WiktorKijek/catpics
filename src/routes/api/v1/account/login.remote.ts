@@ -2,7 +2,12 @@ import { command, getRequestEvent } from "$app/server";
 import { error } from "@sveltejs/kit";
 import * as v from "valibot";
 import { verifyPassword } from "#lib/server/password";
-import { assertRateLimit, AUTH_RATE_LIMITS, clientIp, recordRateLimitHit } from "#lib/server/rateLimit";
+import {
+	assertRateLimit,
+	AUTH_RATE_LIMITS,
+	clientIp,
+	recordRateLimitHit,
+} from "#lib/server/rateLimit";
 import { createSession, SESSION_COOKIE, SESSION_EXPIRY_SECONDS } from "#lib/server/session";
 
 const LoginInputSchema = v.object({
@@ -47,8 +52,16 @@ export const login = command(LoginInputSchema, async (input): Promise<AccountInf
 
 	// Bound online guessing before the expensive hash runs: a locked key is
 	// rejected cheaply. Counts only failed attempts (recorded below).
-	await assertRateLimit(platform.env.AUTH_RATE_LIMIT_KV, `login:user:${username}`, AUTH_RATE_LIMITS.loginPerUser);
-	await assertRateLimit(platform.env.AUTH_RATE_LIMIT_KV, `login:ip:${ip}`, AUTH_RATE_LIMITS.loginPerIp);
+	await assertRateLimit(
+		platform.env.AUTH_RATE_LIMIT_KV,
+		`login:user:${username}`,
+		AUTH_RATE_LIMITS.loginPerUser,
+	);
+	await assertRateLimit(
+		platform.env.AUTH_RATE_LIMIT_KV,
+		`login:ip:${ip}`,
+		AUTH_RATE_LIMITS.loginPerIp,
+	);
 
 	const account = await db
 		.selectFrom("logins")
@@ -65,8 +78,16 @@ export const login = command(LoginInputSchema, async (input): Promise<AccountInf
 	if (!account || !valid) {
 		// Wrong credentials (or unknown username — the dummy hash keeps the
 		// timing uniform) count against both throttles.
-		await recordRateLimitHit(platform.env.AUTH_RATE_LIMIT_KV, `login:user:${username}`, AUTH_RATE_LIMITS.loginPerUser);
-		await recordRateLimitHit(platform.env.AUTH_RATE_LIMIT_KV, `login:ip:${ip}`, AUTH_RATE_LIMITS.loginPerIp);
+		await recordRateLimitHit(
+			platform.env.AUTH_RATE_LIMIT_KV,
+			`login:user:${username}`,
+			AUTH_RATE_LIMITS.loginPerUser,
+		);
+		await recordRateLimitHit(
+			platform.env.AUTH_RATE_LIMIT_KV,
+			`login:ip:${ip}`,
+			AUTH_RATE_LIMITS.loginPerIp,
+		);
 		error(401, "Invalid username or password");
 	}
 
