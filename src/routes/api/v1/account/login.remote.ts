@@ -2,6 +2,7 @@ import { command, getRequestEvent } from "$app/server";
 import { error } from "@sveltejs/kit";
 import * as v from "valibot";
 import { verifyPassword } from "#lib/server/password";
+import { assertRateLimit, AUTH_RATE_LIMITS, clientIp, recordRateLimitHit } from "#lib/server/rateLimit";
 import { createSession, SESSION_COOKIE, SESSION_EXPIRY_SECONDS } from "#lib/server/session";
 
 const LoginInputSchema = v.object({
@@ -32,12 +33,28 @@ const DUMMY_PASSWORD_HASH =
 
 export const login = command(LoginInputSchema, async (input): Promise<AccountInfo> => {
 	const event = getRequestEvent();
+	const db = event.locals.database;
 
-	const account = await event.locals.database
+	// Registration folds usernames to lowercase, so fold the login input the
+	// same way — case variants keep resolving to the same account.
+	const username = input.username.trim().toLowerCase();
+	const ip = clientIp(event);
+
+	const platform = event.platform;
+	if (!platform) {
+		error(500, "Missing platform bindings");
+	}
+
+	// Bound online guessing before the expensive hash runs: a locked key is
+	// rejected cheaply. Counts only failed attempts (recorded below).
+	await assertRateLimit(platform.env.AUTH_RATE_LIMIT_KV, `login:user:${username}`, AUTH_RATE_LIMITS.loginPerUser);
+	await assertRateLimit(platform.env.AUTH_RATE_LIMIT_KV, `login:ip:${ip}`, AUTH_RATE_LIMITS.loginPerIp);
+
+	const account = await db
 		.selectFrom("logins")
 		.innerJoin("users", "users.userId", "logins.loginUserId")
 		.select(["logins.loginUserId", "logins.loginPasswordHash"])
-		.where("users.userUsername", "=", input.username)
+		.where("users.userUsername", "=", username)
 		.executeTakeFirst();
 
 	const valid = await verifyPassword(
@@ -46,10 +63,14 @@ export const login = command(LoginInputSchema, async (input): Promise<AccountInf
 	);
 
 	if (!account || !valid) {
+		// Wrong credentials (or unknown username — the dummy hash keeps the
+		// timing uniform) count against both throttles.
+		await recordRateLimitHit(platform.env.AUTH_RATE_LIMIT_KV, `login:user:${username}`, AUTH_RATE_LIMITS.loginPerUser);
+		await recordRateLimitHit(platform.env.AUTH_RATE_LIMIT_KV, `login:ip:${ip}`, AUTH_RATE_LIMITS.loginPerIp);
 		error(401, "Invalid username or password");
 	}
 
-	const session = await createSession(event.locals.database, account.loginUserId);
+	const session = await createSession(db, account.loginUserId);
 	event.cookies.set(SESSION_COOKIE, session.token, {
 		httpOnly: true,
 		sameSite: "lax",

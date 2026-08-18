@@ -2,6 +2,7 @@ import { command, getRequestEvent } from "$app/server";
 import { error } from "@sveltejs/kit";
 import * as v from "valibot";
 import { keysetCursorSchema, type KeysetCursor } from "#lib/cursor";
+import { fetchPostCounts } from "#lib/server/posts";
 
 const PAGE_SIZE = 12;
 
@@ -40,22 +41,7 @@ export const getUserPosts = command(GetUserPostsSchema, async (input): Promise<U
 		error(404, "User not found");
 	}
 
-	let query = db
-		.selectFrom("posts")
-		.select((eb) => [
-			"posts.postId",
-			"posts.postCreatedAt",
-			eb
-				.selectFrom("likes")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("likePostId", "=", "posts.postId")
-				.as("likeCount"),
-			eb
-				.selectFrom("comments")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("commentPostId", "=", "posts.postId")
-				.as("commentCount"),
-		])
+	let query = db.selectFrom("posts").select(["posts.postId", "posts.postCreatedAt"])
 		.where("posts.postAuthorId", "=", input.userId);
 
 	if (cursor) {
@@ -75,6 +61,11 @@ export const getUserPosts = command(GetUserPostsSchema, async (input): Promise<U
 		.orderBy("posts.postId", "desc")
 		.limit(PAGE_SIZE)
 		.execute();
+
+	const { likeCounts, commentCounts } = await fetchPostCounts(
+		db,
+		rows.map((row) => row.postId),
+	);
 
 	const covers = new Map<string, string | null>();
 	if (rows.length > 0) {
@@ -97,8 +88,8 @@ export const getUserPosts = command(GetUserPostsSchema, async (input): Promise<U
 	const posts: UserPostSummary[] = rows.map((row) => ({
 		postId: row.postId,
 		coverKey: covers.get(row.postId) ?? null,
-		likeCount: Number(row.likeCount),
-		commentCount: Number(row.commentCount),
+		likeCount: likeCounts.get(row.postId) ?? 0,
+		commentCount: commentCounts.get(row.postId) ?? 0,
 		createdAt: row.postCreatedAt,
 	}));
 

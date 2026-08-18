@@ -1,7 +1,13 @@
 import { command, getRequestEvent } from "$app/server";
 import * as v from "valibot";
 import { keysetCursorSchema } from "#lib/cursor";
-import { hydrateFeedPosts, type FeedPage, type FeedPost } from "#lib/server/posts";
+import {
+	fetchPostCounts,
+	hydrateFeedPosts,
+	type FeedPage,
+	type FeedPost,
+	type FeedPostSeed,
+} from "#lib/server/posts";
 
 const PAGE_SIZE = 10;
 
@@ -28,7 +34,7 @@ export const getFeedPage = command(FeedPageInputSchema, async (input): Promise<F
 		.selectFrom("posts")
 		.innerJoin("users", "users.userId", "posts.postAuthorId")
 		.leftJoin("profiles", "profiles.profileUserId", "posts.postAuthorId")
-		.select((eb) => [
+		.select([
 			"posts.postId",
 			"posts.postCaption",
 			"posts.postLocation",
@@ -36,16 +42,6 @@ export const getFeedPage = command(FeedPageInputSchema, async (input): Promise<F
 			"posts.postAuthorId",
 			"users.userUsername as authorUsername",
 			"profiles.profileAvatarKey as authorAvatarKey",
-			eb
-				.selectFrom("likes")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("likePostId", "=", "posts.postId")
-				.as("likeCount"),
-			eb
-				.selectFrom("comments")
-				.select(db.fn.countAll().as("count"))
-				.whereRef("commentPostId", "=", "posts.postId")
-				.as("commentCount"),
 		]);
 
 	if (cursor) {
@@ -66,7 +62,25 @@ export const getFeedPage = command(FeedPageInputSchema, async (input): Promise<F
 		.limit(PAGE_SIZE)
 		.execute();
 
-	const posts = await hydrateFeedPosts(db, rows, viewerId);
+	// Counts come from two grouped queries over the page's posts instead of a
+	// correlated COUNT subquery per post (see `fetchPostCounts`).
+	const { likeCounts, commentCounts } = await fetchPostCounts(
+		db,
+		rows.map((row) => row.postId),
+	);
+	const seeds: FeedPostSeed[] = rows.map((row) => ({
+		postId: row.postId,
+		postCaption: row.postCaption,
+		postLocation: row.postLocation,
+		postCreatedAt: row.postCreatedAt,
+		postAuthorId: row.postAuthorId,
+		authorUsername: row.authorUsername,
+		authorAvatarKey: row.authorAvatarKey,
+		likeCount: likeCounts.get(row.postId) ?? 0,
+		commentCount: commentCounts.get(row.postId) ?? 0,
+	}));
+
+	const posts = await hydrateFeedPosts(db, seeds, viewerId);
 
 	const last = posts[posts.length - 1];
 	const nextCursor =

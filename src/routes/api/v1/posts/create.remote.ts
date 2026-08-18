@@ -1,4 +1,5 @@
 import { command, getRequestEvent } from "$app/server";
+import { error } from "@sveltejs/kit";
 import * as v from "valibot";
 import { requireSession } from "#lib/server/auth";
 import { batch } from "#lib/server/db";
@@ -12,7 +13,14 @@ const CreatePostSchema = v.object({
 		v.pipe(v.string(), v.trim(), v.maxLength(200, "Location must be at most 200 characters")),
 	),
 	imageKeys: v.pipe(
-		v.array(v.pipe(v.string(), v.trim(), v.minLength(1, "Image key cannot be empty"))),
+		v.array(
+			v.pipe(
+				v.string(),
+				v.trim(),
+				v.minLength(1, "Image key cannot be empty"),
+				v.maxLength(500, "Image key is too long"),
+			),
+		),
 		v.minLength(1, "A post needs at least one image"),
 		v.maxLength(10, "A post can have at most 10 images"),
 	),
@@ -36,6 +44,19 @@ export const createPost = command(CreatePostSchema, async (input): Promise<Creat
 	const location = input.location || null;
 	// Deduplicate keys so a single image can't be attached to the post twice.
 	const imageKeys = [...new Set(input.imageKeys)];
+
+	// Only keys the session user actually uploaded may be attached (their own
+	// post and avatar namespaces — the upload routes only ever mint keys under
+	// these). Keys are otherwise attacker-chosen strings, and deleting a post
+	// later removes the bucket objects it references, so accepting a foreign
+	// key here would let anyone destroy anyone else's media.
+	const prefix = `posts/${session.userId}/`;
+	const avatarPrefix = `avatars/${session.userId}/`;
+	for (const key of imageKeys) {
+		if (!key.startsWith(prefix) && !key.startsWith(avatarPrefix)) {
+			error(400, "Image keys must reference your own uploads");
+		}
+	}
 
 	const postId = crypto.randomUUID();
 	const createdAt = Date.now();

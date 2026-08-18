@@ -160,6 +160,40 @@ export async function ensurePostExists(db: Database, postId: string): Promise<vo
 	}
 }
 
+/**
+ * Batched like/comment counts for a set of posts — two grouped queries
+ * instead of one correlated COUNT subquery per post. A page of N posts scans
+ * the likes/comments tables exactly once regardless of how viral a post is,
+ * which keeps anonymous feed reads off the D1 row budget.
+ */
+export async function fetchPostCounts(
+	db: Database,
+	postIds: string[],
+): Promise<{ likeCounts: Map<string, number>; commentCounts: Map<string, number> }> {
+	const likeCounts = new Map<string, number>();
+	const commentCounts = new Map<string, number>();
+	if (postIds.length === 0) return { likeCounts, commentCounts };
+
+	const [likeRows, commentRows] = await Promise.all([
+		db
+			.selectFrom("likes")
+			.select(["likePostId", db.fn.countAll().as("count")])
+			.where("likePostId", "in", postIds)
+			.groupBy("likePostId")
+			.execute(),
+		db
+			.selectFrom("comments")
+			.select(["commentPostId", db.fn.countAll().as("count")])
+			.where("commentPostId", "in", postIds)
+			.groupBy("commentPostId")
+			.execute(),
+	]);
+
+	for (const row of likeRows) likeCounts.set(row.likePostId, Number(row.count));
+	for (const row of commentRows) commentCounts.set(row.commentPostId, Number(row.count));
+	return { likeCounts, commentCounts };
+}
+
 export async function countPostLikes(db: Database, postId: string): Promise<number> {
 	const row = await db
 		.selectFrom("likes")
